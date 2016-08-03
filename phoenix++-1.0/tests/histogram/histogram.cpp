@@ -29,6 +29,7 @@
 #include <fcntl.h>
 
 #include "map_reduce.h"
+#include "debug.h"
 
 #ifdef TBB
 #include "tbb/scalable_allocator.h"
@@ -61,7 +62,7 @@ public:
         emit_intermediate(out, p.g+256, 1);
         emit_intermediate(out, p.r+512, 1);
     }
-#ifdef MUST_REDUCE
+//#ifdef MUST_REDUCE
     void reduce(key_type const& key, reduce_iterator const& values, std::vector<keyval>& out) const {
         value_type total=0, val;
         while (values.next(val))
@@ -71,7 +72,7 @@ public:
         keyval kv = {key, val};
         out.push_back(kv);
     }
-#endif
+//#endif
 };
 
 /* test_endianess
@@ -96,6 +97,9 @@ bool test_endianess() {
 
 
 int main(int argc, char *argv[]) {
+    __logging = false;
+    __replaying = false;
+
     int fd;
     char *fdata;
     struct stat finfo;

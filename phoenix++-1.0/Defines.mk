@@ -69,6 +69,8 @@ endif
 
 CFLAGS += $(ARCH)
 
+CFLAGS += -std=c++11
+
 # The $(OS) flag is included here to define the OS-specific constant so that
 # only the appropriate portions of the application get compiled. See the README
 # file for more information.

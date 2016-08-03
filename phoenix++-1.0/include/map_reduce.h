@@ -43,6 +43,11 @@
 #include "locality.h"
 #include "thread_pool.h"
 
+#include "debug.h"
+
+bool __logging = false;
+bool __replaying = false;
+
 template<typename Impl, typename D, typename K, typename V, 
     class Container = hash_container<K, V, buffer_combiner> >
 class MapReduce
@@ -56,7 +61,9 @@ public:
     typedef Container container_type;
 
     typedef typename container_type::input_type map_container;
-    typedef typename container_type::output_type reduce_iterator; 
+    //typedef typename container_type::output_type reduce_iterator; 
+    typedef typename container_type::output_type value_container;
+    typedef ProxyIterator<V, value_container> reduce_iterator;
  
     struct keyval
     {
@@ -78,6 +85,9 @@ protected:
     
     uint64_t num_map_tasks;
     uint64_t num_reduce_tasks;
+
+    ReduceDebuggerBase<K, V, value_container>* reduce_debugger;
+    // for debugging
 
     virtual void run_map(data_type* data, uint64_t len);
     virtual void run_reduce();
@@ -146,6 +156,18 @@ public:
         // number of processors
         int threads = atoi(GETENV("MR_NUMTHREADS"));
         setThreads(threads > 0 ? threads : proc_get_num_cpus(), 0);
+        if (__logging) {
+            reduce_debugger =
+                new ReduceDebugger<K, V, value_container, true, false>();
+        }
+        else if (__replaying) {
+            reduce_debugger =
+                new ReduceDebugger<K, V, value_container, false, true>();
+        }
+        else {
+            reduce_debugger =
+                new ReduceDebugger<K, V, value_container, false, false>();
+        }
     }
 
     virtual ~MapReduce() {
@@ -349,13 +371,14 @@ void MapReduce<Impl, D, K, V, Container>::reduce_worker (
 
         timespec user_begin = get_time();
         K key;
-        reduce_iterator values;
+        value_container values;
 
         while(i.next(key, values))
         {
-            if(values.size() > 0)
+            auto vs = reduce_debugger->get_iterator(key, values);
+            if(vs.size() > 0)
                 static_cast<Impl const*>(this)->reduce(
-                    key, values, this->final_vals[loc.thread]);
+                    key, vs, this->final_vals[loc.thread]);
         }
         user_time += time_elapsed(user_begin);
     }
