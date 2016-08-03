@@ -27,6 +27,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <string>
 
 #include "map_reduce.h"
 #include "debug.h"
@@ -97,9 +98,6 @@ bool test_endianess() {
 
 
 int main(int argc, char *argv[]) {
-    __logging = false;
-    __replaying = false;
-
     int fd;
     char *fdata;
     struct stat finfo;
@@ -111,8 +109,17 @@ int main(int argc, char *argv[]) {
     // Make sure a filename is specified
     if (argv[1] == NULL)
     {
-        printf("USAGE: %s <bitmap filename>\n", argv[0]);
+        printf("USAGE: %s <bitmap filename> <log/replay>\n", argv[0]);
         exit(1);
+    }
+
+    if (std::string(argv[2]) == "log") {
+        __logging = true;
+        __replaying = false;
+    }
+    else if (std::string(argv[2]) == "replay") {
+        __logging = false;
+        __replaying = true;
     }
     
     fname = argv[1];

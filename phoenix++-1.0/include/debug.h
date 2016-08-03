@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdio>
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <mutex>
@@ -69,6 +70,7 @@ template<typename KT, typename VT, class IteratorT>
 class ReduceDebuggerBase {
     using IT = ProxyIterator<VT, IteratorT>;
 public:
+    virtual ~ReduceDebuggerBase() {}
     virtual IT get_iterator(const KT& key, const IteratorT& it) = 0;
 };
 
@@ -88,21 +90,26 @@ public:
     }
 };
 
+static const char* _log_file = "reducer.trace";
+
 // logger
 template<typename KT, typename VT, class IteratorT>
 class ReduceDebugger<KT, VT, IteratorT, true, false> 
     : public ReduceDebuggerBase<KT, VT, IteratorT> {
-    const std::string& _log_file = ".debug_data";
     std::ofstream _file;
     std::mutex _mutex;
+    std::map<KT, std::vector<VT>> _sorted;
     using IT = ProxyIterator<VT, IteratorT>;
 public:
-    ReduceDebugger() : _file(_log_file, std::ios_base::binary) {}
+    //ReduceDebugger() : _file(_log_file, std::ios_base::binary) {}
+    ReduceDebugger() : _file(_log_file) {}
+    ~ReduceDebugger() { _file.flush();  _file.close(); }
     
     IT get_iterator(const KT& key, const IteratorT& it) {
         std::lock_guard<std::mutex> l(_mutex);
         Serializer<KT>::serialize(_file, key);
-        Serializer<size_t>::serialize(_file, it.size());
+        size_t s = it.size();
+        Serializer<size_t>::serialize(_file, s);
         IteratorT tmp = it;
         VT v;
         while (tmp.next(v)) {
@@ -116,25 +123,28 @@ public:
 template<typename KT, typename VT, class IteratorT>
 class ReduceDebugger<KT, VT, IteratorT, false, true> 
     : public ReduceDebuggerBase<KT, VT, IteratorT> {
-    const std::string& _log_file = ".debug_data";
-    std::ifstream _file;
     std::mutex _mutex;
     std::map<KT, std::vector<VT>> _kvs;
     using IT = ProxyIterator<VT, IteratorT>;
 public:
-    ReduceDebugger() : _file(_log_file, std::ios_base::binary) {
+    ReduceDebugger() {
         std::lock_guard<std::mutex> l(_mutex);
+        //std::ifstream file(_log_file, std::ios_base::binary);
+        std::ifstream file(_log_file);
         KT key;
         size_t size;
         // load data file
-        while (_file.good()) {
-            Serializer<KT>::deserialize(_file, key);
-            Serializer<size_t>::deserialize(_file, size);
+        while (file.good()) {
+            Serializer<KT>::deserialize(file, key);
+            if (!file.good()) {
+                break;
+            }
+            Serializer<size_t>::deserialize(file, size);
             assert(_kvs.find(key) == _kvs.end());
             auto& vs = _kvs[key];
             vs.resize(size);
             for (size_t i = 0; i < size; i++) {
-                Serializer<VT>::deserialize(_file, vs[i]);
+                Serializer<VT>::deserialize(file, vs[i]);
             }
         }
     }

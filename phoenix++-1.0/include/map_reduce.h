@@ -156,18 +156,6 @@ public:
         // number of processors
         int threads = atoi(GETENV("MR_NUMTHREADS"));
         setThreads(threads > 0 ? threads : proc_get_num_cpus(), 0);
-        if (__logging) {
-            reduce_debugger =
-                new ReduceDebugger<K, V, value_container, true, false>();
-        }
-        else if (__replaying) {
-            reduce_debugger =
-                new ReduceDebugger<K, V, value_container, false, true>();
-        }
-        else {
-            reduce_debugger =
-                new ReduceDebugger<K, V, value_container, false, false>();
-        }
     }
 
     virtual ~MapReduce() {
@@ -344,6 +332,19 @@ map_worker(thread_loc const& loc, double& time, double& user_time, int& tasks)
 template<typename Impl, typename D, typename K, typename V, class Container>
 void MapReduce<Impl, D, K, V, Container>::run_reduce ()
 {
+    if (__logging) {
+        reduce_debugger =
+            new ReduceDebugger<K, V, value_container, true, false>();
+    }
+    else if (__replaying) {
+        reduce_debugger =
+            new ReduceDebugger<K, V, value_container, false, true>();
+    }
+    else {
+        reduce_debugger =
+            new ReduceDebugger<K, V, value_container, false, false>();
+    }
+
     // Create tasks and enqueue...
     for (uint64_t i = 0; i < this->num_reduce_tasks; ++i) {
         task_queue::task_t task = {    i, 0, i, 0 };
@@ -352,6 +353,8 @@ void MapReduce<Impl, D, K, V, Container>::run_reduce ()
 
     start_workers (&reduce_callback, 
         std::min(this->num_reduce_tasks, num_threads), "reduce");
+
+    delete reduce_debugger;
 }
 
 /**
