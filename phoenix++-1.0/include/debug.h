@@ -101,13 +101,14 @@ class ReduceDebugger<KT, VT, IteratorT, true, false>
     std::map<KT, std::vector<VT>> _sorted;
     using IT = ProxyIterator<VT, IteratorT>;
 public:
-    //ReduceDebugger() : _file(_log_file, std::ios_base::binary) {}
-    ReduceDebugger() : _file(_log_file) {}
+    ReduceDebugger() : _file(_log_file, std::ios_base::binary) {}
+    //ReduceDebugger() : _file(_log_file) {}
     ~ReduceDebugger() { _file.flush();  _file.close(); }
     
     IT get_iterator(const KT& key, const IteratorT& it) {
         std::lock_guard<std::mutex> l(_mutex);
         Serializer<KT>::serialize(_file, key);
+        std::cout << "dump " << key << std::endl;
         size_t s = it.size();
         Serializer<size_t>::serialize(_file, s);
         IteratorT tmp = it;
@@ -129,8 +130,8 @@ class ReduceDebugger<KT, VT, IteratorT, false, true>
 public:
     ReduceDebugger() {
         std::lock_guard<std::mutex> l(_mutex);
-        //std::ifstream file(_log_file, std::ios_base::binary);
-        std::ifstream file(_log_file);
+        std::ifstream file(_log_file, std::ios_base::binary);
+        //std::ifstream file(_log_file);
         KT key;
         size_t size;
         // load data file
@@ -140,6 +141,7 @@ public:
                 break;
             }
             Serializer<size_t>::deserialize(file, size);
+            std::cout << "key=" << key << std::endl;
             assert(_kvs.find(key) == _kvs.end());
             auto& vs = _kvs[key];
             vs.resize(size);

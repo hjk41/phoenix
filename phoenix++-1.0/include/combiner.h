@@ -27,6 +27,7 @@
 #ifndef COMBINER_H_
 #define COMBINER_H_
 
+#include <deque>
 #include <vector>
 
 // The assumption with a combiner is that it will be very cheap to copy 
@@ -37,12 +38,18 @@
 template<typename V, template<class> class Allocator = std::allocator>
 class buffer_combiner
 {
-    std::vector<V, Allocator<V> >* data;
+    std::deque<V, Allocator<V> >* data;
 
 public:    
-    buffer_combiner() : data(new std::vector<V, Allocator<V> >) {}
+    buffer_combiner() : data(new std::deque<V, Allocator<V> >) {}
     void add(V const& v) {
-        data->push_back(v);
+        // add some randomness here...
+        if (rand() % 100 > 50) {
+            data->push_back(v);
+        }
+        else {
+            data->push_front(v);
+        }
     }
 
     bool empty() const {
@@ -51,8 +58,8 @@ public:
 
     class combined
     {
-        std::vector< std::vector<V, Allocator<V> >*, 
-            Allocator<std::vector<V, Allocator<V> >* > > items;
+        std::vector< std::deque<V, Allocator<V> >*,
+            Allocator<std::deque<V, Allocator<V> >* > > items;
         mutable unsigned int current_list, current_index;
     public:
         combined() : current_list(0), current_index(0) {}

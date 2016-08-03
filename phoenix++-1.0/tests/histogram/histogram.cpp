@@ -50,7 +50,7 @@ class HistogramMR : public MapReduceSort<HistogramMR, pixel, intptr_t, uint64_t,
 #elif defined(MUST_USE_FIXED_HASH)
 class HistogramMR : public MapReduceSort<HistogramMR, pixel, intptr_t, uint64_t, fixed_hash_container<intptr_t, uint64_t, sum_combiner, 32768, std::tr1::hash<intptr_t>
 #else
-class HistogramMR : public MapReduceSort<HistogramMR, pixel, intptr_t, uint64_t, array_container<intptr_t, uint64_t, sum_combiner, 768
+class HistogramMR : public MapReduceSort<HistogramMR, pixel, intptr_t, uint64_t, array_container<intptr_t, uint64_t, buffer_combiner, 768
 #endif
 #ifdef TBB
     , tbb::scalable_allocator

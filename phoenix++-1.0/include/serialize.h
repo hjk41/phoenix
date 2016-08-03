@@ -70,3 +70,22 @@ public:
         return is;
     }
 };
+
+template<>
+class Serializer<std::string, std::string> {
+public:
+    static std::ostream& serialize(std::ostream& os, const std::string& d) {
+        size_t size = d.size();
+        os.write((const char*)&size, sizeof(size_t));
+        os.write(d.data(), size);
+        return os;
+    }
+
+    static std::istream& deserialize(std::istream& is, std::string& d) {
+        size_t size;
+        is.read((char*)&size, sizeof(size_t));
+        d.resize(size);
+        is.read(&d[0], size);
+        return is;
+    }
+};
