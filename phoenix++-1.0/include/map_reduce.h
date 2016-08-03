@@ -199,7 +199,7 @@ run (std::vector<keyval>& result)
 
     // Run splitter to generate chunks
     get_time (begin);
-    while (static_cast<Impl const*>(this)->split(chunk))
+    while (static_cast<Impl *>(this)->split(chunk))
     {
         data.push_back(chunk);
     }
@@ -448,6 +448,7 @@ class MapReduceSort : public MapReduce<Impl, D, K, V, Container>
 {
 public:
     typedef typename MapReduce<Impl, D, K, V, Container>::keyval keyval;
+    using MapReduce<Impl, D, K, V, Container>::start_workers;
 
 protected:
     
