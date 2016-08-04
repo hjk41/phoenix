@@ -11,6 +11,7 @@
 
 #include "container.h"
 #include "serialize.h"
+#include "stddefines.h"
 #include "util.h"
 
 bool __logging = false;
@@ -168,12 +169,20 @@ class BufferedFile {
     std::string _buf;
     static const size_t BufSize = 10 * 1024 * 1024;
 public:
+    BufferedFile() {
+    }
+
     BufferedFile(const char* path) : _file(path) {
         _buf.reserve(BufSize);
     }
 
     ~BufferedFile() {
         flush();
+    }
+
+    void open(const char* path) {
+        _file.open(path);
+        _buf.reserve(BufSize);
     }
 
     void flush() {
@@ -219,6 +228,12 @@ class PerformanceTracer {
     static double time_start;
 public:
     PerformanceTracer() {
+        __logging = atoi(GETENV("LOG"));
+        __replaying = __logging ? false : atoi(GETENV("REPLAY"));
+        __performance_trace = atoi(GETENV("PTRACE"));
+        if (__performance_trace) {
+            PerformanceTracer::_file.open("performance.trace");
+        }
         PerformanceTracer::master_thread_trace("program_begin");
     }
 
@@ -268,6 +283,6 @@ private:
     }
 };
 
-BufferedFile PerformanceTracer::_file("performance.trace");
+BufferedFile PerformanceTracer::_file;
 double PerformanceTracer::time_start = my_get_time();
 PerformanceTracer __dummyPerformanceTracer;

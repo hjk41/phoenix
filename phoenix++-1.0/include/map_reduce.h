@@ -570,7 +570,7 @@ protected:
             uint64_t length = task.len;
             uint64_t out_index = task.id;
 
-            PerformanceTracer::merge_trace(loc.thread, out_index, "begin");
+            //PerformanceTracer::merge_trace(loc.thread, out_index, "begin");
             if(length == 0)
             {
                 // this case really just means sort my list in place. 
@@ -596,7 +596,7 @@ protected:
                 // for more, do a multiway merge.
                 assert(0);
             }
-            PerformanceTracer::merge_trace(loc.thread, out_index, "end");
+            //PerformanceTracer::merge_trace(loc.thread, out_index, "end");
         }
         time += time_elapsed(begin);
         PerformanceTracer::worker_thread_trace(loc.thread, "merge_end");

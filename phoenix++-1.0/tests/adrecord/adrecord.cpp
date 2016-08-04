@@ -120,19 +120,6 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    if (argc < 3) {
-        __logging = false;
-        __replaying = false;
-    }
-    else if (std::string(argv[2]) == "log") {
-        __logging = true;
-        __replaying = false;
-    }
-    else if (std::string(argv[2]) == "replay") {
-        __logging = false;
-        __replaying = true;
-    }
-
     string fname = argv[1];
     printf("ADRecord: Running...\n");
     ifstream in(fname);
