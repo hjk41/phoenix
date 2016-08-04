@@ -3,6 +3,7 @@
 #include <cctype>
 #include <chrono>
 #include <cstdint>
+#include <fstream>
 #include <iterator>
 #include <locale>
 #include <sstream>
@@ -133,3 +134,4 @@ inline void my_sleep_us(uint64_t us)
 {
     std::this_thread::sleep_for(std::chrono::microseconds(us));
 }
+

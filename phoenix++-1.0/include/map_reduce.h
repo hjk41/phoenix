@@ -45,9 +45,6 @@
 
 #include "debug.h"
 
-bool __logging = false;
-bool __replaying = false;
-
 template<typename Impl, typename D, typename K, typename V, 
     class Container = hash_container<K, V, buffer_combiner> >
 class MapReduce
@@ -202,6 +199,7 @@ template<typename Impl, typename D, typename K, typename V, class Container>
 int MapReduce<Impl, D, K, V, Container>::
 run (std::vector<keyval>& result)
 {
+    PerformanceTracer::master_thread_trace("MapReduce_begin");
     timespec begin;    
     std::vector<D> data;
     uint64_t count;
@@ -216,7 +214,9 @@ run (std::vector<keyval>& result)
     count = data.size();
     print_time_elapsed("split phase", begin);
 
-    return run(&data[0], count, result);
+    int r = run(&data[0], count, result);
+    PerformanceTracer::master_thread_trace("MapReduce_end");
+    return r;
 }
 
 template<typename Impl, typename D, typename K, typename V, class Container>
@@ -245,20 +245,26 @@ run (D *data, uint64_t count, std::vector<keyval>& result)
 
     // Run map tasks and get intermediate values
     get_time (begin);
+    PerformanceTracer::master_thread_trace("map_begin");
     run_map(&data[0], count);
+    PerformanceTracer::master_thread_trace("map_end");
     print_time_elapsed("map phase", begin);
 
     dprintf("In scheduler, all map tasks are done, now scheduling reduce tasks\n");
 
     // Run reduce tasks and get final values
     get_time (begin);
+    PerformanceTracer::master_thread_trace("reduce_begin");
     run_reduce();
+    PerformanceTracer::master_thread_trace("reduce_end");
     print_time_elapsed("reduce phase", begin);
 
     dprintf("In scheduler, all reduce tasks are done, now scheduling merge tasks\n");
 
     get_time (begin);
+    PerformanceTracer::master_thread_trace("merge_begin");
     run_merge();
+    PerformanceTracer::master_thread_trace("merge_end");
     print_time_elapsed("merge phase", begin);
     
     result.swap(*this->final_vals);
@@ -309,6 +315,7 @@ template<typename Impl, typename D, typename K, typename V, class Container>
 void MapReduce<Impl, D, K, V, Container>::
 map_worker(thread_loc const& loc, double& time, double& user_time, int& tasks)
 {
+    PerformanceTracer::worker_thread_trace(loc.thread, "map_begin");
     timespec begin = get_time();
     typename container_type::input_type t = container.get(loc.thread);    
     task_queue::task_t task;
@@ -317,13 +324,16 @@ map_worker(thread_loc const& loc, double& time, double& user_time, int& tasks)
     	timespec user_begin = get_time();
 	for (data_type* data = (data_type*)task.data; 
             data < (data_type*)task.data + task.len; ++data) {
+            PerformanceTracer::map_trace(loc.thread, task.id, "begin");
             static_cast<Impl const*>(this)->map(*data, t);
+            PerformanceTracer::map_trace(loc.thread, task.id, "end");
         }
     	user_time += time_elapsed(user_begin);
     }
 
     container.add(loc.thread, t);
     time += time_elapsed(begin);
+    PerformanceTracer::worker_thread_trace(loc.thread, "map_end");
 }
 
 /**
@@ -364,6 +374,7 @@ template<typename Impl, typename D, typename K, typename V, class Container>
 void MapReduce<Impl, D, K, V, Container>::reduce_worker (
     thread_loc const& loc, double& time, double& user_time, int& tasks)
 {
+    PerformanceTracer::worker_thread_trace(loc.thread, "reduce_begin");
     timespec begin = get_time();
 
     task_queue::task_t task;
@@ -379,14 +390,18 @@ void MapReduce<Impl, D, K, V, Container>::reduce_worker (
         while(i.next(key, values))
         {
             auto vs = reduce_debugger->get_iterator(key, values);
-            if(vs.size() > 0)
+            if (vs.size() > 0) {
+                PerformanceTracer::reduce_trace(loc.thread, key, "begin");
                 static_cast<Impl const*>(this)->reduce(
                     key, vs, this->final_vals[loc.thread]);
+                PerformanceTracer::reduce_trace(loc.thread, key, "end");
+            }
         }
         user_time += time_elapsed(user_begin);
     }
 
     time += time_elapsed(begin);
+    PerformanceTracer::worker_thread_trace(loc.thread, "reduce_end");
 }
 
 /**
@@ -546,6 +561,7 @@ protected:
     virtual void merge_worker (thread_loc const& loc, double& time, 
         double& user_time, int& tasks)
     {
+        PerformanceTracer::worker_thread_trace(loc.thread, "merge_begin");
         timespec begin = get_time();
         task_queue::task_t task;
         while (this->taskQueue->dequeue (task, loc)) {
@@ -554,6 +570,7 @@ protected:
             uint64_t length = task.len;
             uint64_t out_index = task.id;
 
+            PerformanceTracer::merge_trace(loc.thread, out_index, "begin");
             if(length == 0)
             {
                 // this case really just means sort my list in place. 
@@ -579,8 +596,10 @@ protected:
                 // for more, do a multiway merge.
                 assert(0);
             }
+            PerformanceTracer::merge_trace(loc.thread, out_index, "end");
         }
         time += time_elapsed(begin);
+        PerformanceTracer::worker_thread_trace(loc.thread, "merge_end");
     }
 };
 
