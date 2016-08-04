@@ -17,6 +17,28 @@ struct AdRecord {
 };
 
 template<>
+class TextSerializer<AdRecord> {
+public:
+    static std::ostream& serialize(std::ostream& os, const AdRecord& d) {
+        TextSerializer<string>::serialize(os, d.ViewID);
+        TextSerializer<string>::serialize(os, d.State);
+        TextSerializer<string>::serialize(os, d.AdId);
+        TextSerializer<uint64_t>::serialize(os, d.Clicks);
+        TextSerializer<double>::serialize(os, d.Revenue);
+        return os;
+    }
+
+    static std::istream& deserialize(std::istream& is, AdRecord& d) {
+        TextSerializer<string>::deserialize(is, d.ViewID);
+        TextSerializer<string>::deserialize(is, d.State);
+        TextSerializer<string>::deserialize(is, d.AdId);
+        TextSerializer<uint64_t>::deserialize(is, d.Clicks);
+        TextSerializer<double>::deserialize(is, d.Revenue);
+        return is;
+    }
+};
+
+template<>
 class Serializer<AdRecord, AdRecord> {
 public:
     static std::ostream& serialize(std::ostream& os, const AdRecord& d) {

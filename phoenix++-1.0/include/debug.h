@@ -108,8 +108,7 @@ public:
     IT get_iterator(const KT& key, const IteratorT& it) {
         std::lock_guard<std::mutex> l(_mutex);
         Serializer<KT>::serialize(_file, key);
-        std::cout << "dump " << key << std::endl;
-        size_t s = it.size();
+        size_t s = it.num_items();
         Serializer<size_t>::serialize(_file, s);
         IteratorT tmp = it;
         VT v;
@@ -141,7 +140,6 @@ public:
                 break;
             }
             Serializer<size_t>::deserialize(file, size);
-            std::cout << "key=" << key << std::endl;
             assert(_kvs.find(key) == _kvs.end());
             auto& vs = _kvs[key];
             vs.resize(size);

@@ -61,11 +61,13 @@ public:
         std::vector< std::deque<V, Allocator<V> >*,
             Allocator<std::deque<V, Allocator<V> >* > > items;
         mutable unsigned int current_list, current_index;
+        size_t n_items;
     public:
-        combined() : current_list(0), current_index(0) {}
+        combined() : current_list(0), current_index(0), n_items(0) {}
 
         void add(buffer_combiner<V, Allocator> const* c) {
             items.push_back(c->data);
+            n_items += c->data->size();
         }
 
         bool next(V& v) const {
@@ -97,6 +99,10 @@ public:
 
         int size() const {
             return items.size();
+        }
+
+        size_t num_items() const {
+            return n_items;
         }
 
         void clear() {
@@ -155,6 +161,9 @@ public:
         int size() const {
             return _empty ? 0 : 1;
         }
+        size_t num_items() const {
+            return this->size();
+        }
         void clear() {
             Impl::Init(m);
             i = 0;
@@ -189,11 +198,13 @@ public:
         std::vector< std::vector<V, Allocator<V> >*, 
             Allocator<std::vector<V, Allocator<V> >* > > items;
         mutable bool done;
+        size_t n_items;
     public:
-        combined() : done(false) {}
+        combined() : done(false), n_items(0) {}
 
         void add(associative_combiner<Impl, V, Allocator> const* c) {
             items.push_back(c->data);
+            n_items += c->data->size();
         }
 
         bool next(V& v) const {
@@ -218,6 +229,10 @@ public:
 
         int size() const {
             return items.size();
+        }
+
+        size_t num_items() const {
+            return n_items;
         }
 
         void clear() {
