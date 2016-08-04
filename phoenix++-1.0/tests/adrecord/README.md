@@ -8,14 +8,20 @@ This program assumes that records with the same ViewId will have the same State 
 The program tracer can log the time in which each event occurs in the MapReduce framework. Currently we log master thread events, worker events, and map/reduce/merge events.
 
 ## How to use debugger and tracer:
-Logging is enabled through setting the LOG environment variable:
-	```$LOG=1 ./adrecord test2.txt```
-	With this command you should get a reducer.trace file in the same directory, which records the reducer inputs. Since there is nondeterminism in the program, it will sometimes give you different outputs if you run it multiple times.
+**Logging** is enabled through setting the LOG environment variable:
+```bash
+$ LOG=1 ./adrecord test2.txt
+```
+With this command you should get a reducer.trace file in the same directory, which records the reducer inputs. Since there is nondeterminism in the program, it will sometimes give you different outputs if you run it multiple times.
 
-Replaying is enabled through setting the REPLAY environment variable:
-	```$REPLAY=1 ./adrecord test2.txt```
-	This command will execute the same MapReduce program and load the reduce input from reducer.trace. As a result, it should always give you the same output as the round in which you do logging.
+**Replaying** is enabled through setting the REPLAY environment variable:
+```bash
+$ REPLAY=1 ./adrecord test2.txt
+```
+This command will execute the same MapReduce program and load the reduce input from reducer.trace. As a result, it should always give you the same output as the round in which you do logging.
 
-Performance tracing is enabled through setting the PTRACE environment variable:
-	```PTRACE=1 ./adrecord test2.txt```
-	This command will execute the program and record performance traces in performance.trace.
+**Performance tracing** is enabled through setting the PTRACE environment variable:
+```bash
+$ PTRACE=1 ./adrecord test2.txt
+```
+This command will execute the program and record performance traces in performance.trace.
